@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PASSA OU PATCHA — O CAOS OPERACIONAL</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+cursor:none;
+}
+
+:root{
+--pink:#ff006a;
+--orange:#ff8400;
+--yellow:#ffd500;
+--blue:#00d9ff;
+--purple:#7a2cff;
+--bg:#0b0617;
+--card:rgba(18,18,35,.76);
+--line:rgba(255,255,255,.12);
+}
+
+html,body{
+min-height:100%;
+overflow-x:hidden;
+font-family:'Rubik',sans-serif;
+color:white;
+background:
+radial-gradient(circle at top left,rgba(255,255,255,.18),transparent 20%),
+linear-gradient(135deg,#ffd500 0%,#ff4c6a 28%,#7a2cff 70%,#031326 100%);
+}
+
+body::before{
+content:'';
+position:fixed;
+inset:0;
+background:
+repeating-linear-gradient(
+0deg,
+rgba(255,255,255,.035),
+rgba(255,255,255,.035) 2px,
+transparent 2px,
+transparent 5px
+);
+pointer-events:none;
+z-index:0;
+}
+
+#cursorPie{
+position:fixed;
+width:44px;
+height:44px;
+pointer-events:none;
+z-index:999999;
+transform:translate(-45%,-35%) rotate(-8deg);
+filter:drop-shadow(0 8px 12px rgba(0,0,0,.42));
+}
+
+#app{
+position:relative;
+z-index:2;
+min-height:100vh;
+display:flex;
+flex-direction:column;
+}
+
+.topbar{
+position:sticky;
+top:0;
+z-index:50;
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:14px;
+padding:14px 24px;
+background:
+linear-gradient(90deg,#ff006a,#ff8400,#ffd500,#00d9ff,#7a2cff);
+border-bottom:4px solid rgba(255,255,255,.25);
+box-shadow:0 12px 40px rgba(0,0,0,.4);
+flex-wrap:wrap;
+}
+
+.logo{
+font-family:'Bungee',cursive;
+font-size:clamp(22px,3vw,36px);
+line-height:1;
+text-shadow:4px 4px 0 #000;
+}
+
+.logo span{
+background:white;
+color:black;
+padding:4px 10px;
+border-radius:10px;
+margin-left:8px;
+display:inline-block;
+}
+
+.scoreboard{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.score{
+padding:10px 14px;
+background:rgba(0,0,0,.35);
+border-radius:999px;
+font-weight:900;
+font-size:14px;
+border:2px solid rgba(255,255,255,.14);
+backdrop-filter:blur(10px);
+}
+
+.main{
+flex:1;
+display:grid;
+grid-template-columns:280px minmax(0,1fr) 320px;
+gap:18px;
+padding:18px;
+}
+
+.panel{
+background:var(--card);
+border:2px solid var(--line);
+border-radius:28px;
+overflow:hidden;
+backdrop-filter:blur(16px);
+box-shadow:0 18px 50px rgba(0,0,0,.35);
+position:relative;
+min-width:0;
+}
+
+.panel::before{
+content:'';
+position:absolute;
+inset:0;
+background:
+linear-gradient(135deg,rgba(255,255,255,.08),transparent 45%);
+pointer-events:none;
+}
+
+.section-title{
+padding:16px 20px;
+font-size:13px;
+font-weight:900;
+letter-spacing:2px;
+text-transform:uppercase;
+background:rgba(255,255,255,.06);
+border-bottom:1px solid rgba(255,255,255,.08);
+position:relative;
+z-index:2;
+}
+
+.host{
+padding:22px;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:16px;
+position:relative;
+z-index:2;
+}
+
+.avatar{
+width:min(170px,48vw);
+aspect-ratio:1/1;
+border-radius:50%;
+background:
+radial-gradient(circle at 35% 28%,#fff 0%,#ffe58a 18%,#ff8900 48%,#ff006a 100%);
+box-shadow:
+0 0 0 10px rgba(255,255,255,.12),
+0 20px 40px rgba(0,0,0,.45);
+position:relative;
+animation:pulse 3s infinite;
+}
+
+.avatar::before{
+content:'🎤';
+position:absolute;
+font-size:70px;
+right:-16px;
+bottom:-16px;
+transform:rotate(-14deg);
+}
+
+@keyframes pulse{
+0%,100%{transform:scale(1)}
+50%{transform:scale(1.04)}
+}
+
+.host-name{
+font-family:'Bungee',cursive;
+font-size:28px;
+line-height:1.1;
+text-align:center;
+text-shadow:4px 4px 0 #000;
+}
+
+.host-quote{
+width:100%;
+padding:14px;
+background:rgba(255,255,255,.07);
+border-radius:18px;
+line-height:1.6;
+font-size:14px;
+text-align:center;
+}
+
+.audience{
+width:100%;
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:10px;
+}
+
+.plate{
+height:42px;
+border-radius:999px;
+position:relative;
+background:
+radial-gradient(ellipse at center,#fff 0%,#ffe9f4 45%,#ffb4da 62%,#8d46ff 100%);
+box-shadow:
+inset 0 -6px 0 rgba(0,0,0,.16),
+0 6px 12px rgba(0,0,0,.22);
+animation:bounce 2s infinite;
+}
+
+.plate::before{
+content:'';
+position:absolute;
+left:16%;
+right:16%;
+top:8px;
+height:16px;
+border-radius:999px;
+background:
+linear-gradient(180deg,#fff,#ffd5e8);
+}
+
+.plate:nth-child(2n){animation-delay:.4s}
+.plate:nth-child(3n){animation-delay:.7s}
+
+@keyframes bounce{
+0%,100%{transform:translateY(0)}
+50%{transform:translateY(-6px)}
+}
+
+.stage{
+padding:22px;
+position:relative;
+z-index:2;
+}
+
+.ticket{
+background:
+linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+border:2px solid rgba(255,255,255,.08);
+border-radius:28px;
+padding:28px;
+display:flex;
+flex-direction:column;
+gap:20px;
+position:relative;
+overflow:hidden;
+}
+
+/* AO VIVO duplicado removido: fica apenas no cabeçalho */
+.ticket::after{
+content:'';
+display:none;
+}
+
+.severity{
+display:inline-flex;
+align-items:center;
+gap:8px;
+padding:10px 16px;
+border-radius:999px;
+font-size:13px;
+font-weight:900;
+width:max-content;
+letter-spacing:1px;
+}
+
+.critical{
+background:#ff0048;
+box-shadow:0 0 28px rgba(255,0,72,.45);
+}
+
+.high{
+background:#ff8400;
+}
+
+.medium{
+background:#0099ff;
+}
+
+.ticket h2{
+font-size:clamp(28px,4vw,42px);
+line-height:1.08;
+font-weight:900;
+}
+
+.ticket pre{
+background:#050510;
+border-radius:18px;
+padding:18px;
+border:1px solid rgba(255,255,255,.08);
+color:#7dffb3;
+font-size:14px;
+line-height:1.6;
+white-space:pre-wrap;
+overflow:auto;
+}
+
+.actions{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+gap:14px;
+}
+
+.action{
+border:none;
+cursor:none;
+min-height:66px;
+padding:16px;
+border-radius:20px;
+font-size:15px;
+font-weight:900;
+color:white;
+transition:.22s;
+position:relative;
+overflow:hidden;
+}
+
+.action:hover{
+transform:translateY(-4px) scale(1.02);
+}
+
+.action::before{
+content:'';
+position:absolute;
+inset:0;
+background:
+linear-gradient(135deg,rgba(255,255,255,.22),transparent 45%);
+pointer-events:none;
+}
+
+.assume{background:linear-gradient(135deg,#00c95f,#00ff91)}
+.pass{background:linear-gradient(135deg,#ff8400,#ff2e00)}
+.logs{background:linear-gradient(135deg,#00b7ff,#004dff)}
+.ignore{background:linear-gradient(135deg,#666,#222)}
+
+.feed{
+padding:16px;
+display:flex;
+flex-direction:column;
+gap:12px;
+max-height:calc(100vh - 180px);
+overflow:auto;
+position:relative;
+z-index:2;
+}
+
+.feed-card{
+padding:14px;
+border-radius:18px;
+background:rgba(255,255,255,.06);
+border:1px solid rgba(255,255,255,.08);
+font-size:14px;
+line-height:1.5;
+animation:slideIn .3s;
+}
+
+@keyframes slideIn{
+from{
+opacity:0;
+transform:translateX(18px);
+}
+to{
+opacity:1;
+transform:translateX(0);
+}
+}
+
+.footer{
+padding:16px;
+text-align:center;
+font-size:13px;
+background:rgba(0,0,0,.25);
+border-top:1px solid rgba(255,255,255,.08);
+}
+
+.overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.65);
+backdrop-filter:blur(12px);
+display:flex;
+align-items:center;
+justify-content:center;
+padding:18px;
+z-index:999;
+overflow:hidden;
+}
+
+.modal{
+width:min(920px,100%);
+max-height:calc(100vh - 36px);
+background:
+linear-gradient(145deg,#1c1033,#2b1450,#481b7a);
+border-radius:34px;
+padding:36px;
+position:relative;
+overflow-y:auto;
+overflow-x:hidden;
+border:2px solid rgba(255,255,255,.1);
+box-shadow:0 30px 80px rgba(0,0,0,.55);
+scrollbar-width:thin;
+}
+
+.modal::before{
+content:'';
+position:absolute;
+width:520px;
+height:520px;
+background:radial-gradient(circle,#ffd500,transparent 70%);
+top:-260px;
+right:-260px;
+opacity:.25;
+pointer-events:none;
+}
+
+.hero{
+display:grid;
+grid-template-columns:1fr 320px;
+gap:28px;
+align-items:center;
+position:relative;
+z-index:2;
+}
+
+.hero h1{
+font-family:'Bungee',cursive;
+font-size:clamp(44px,7vw,72px);
+line-height:.92;
+margin-bottom:18px;
+text-shadow:5px 5px 0 #000;
+}
+
+.hero p{
+font-size:17px;
+line-height:1.7;
+opacity:.95;
+}
+
+.tv{
+min-height:220px;
+height:auto;
+aspect-ratio:1.15/1;
+border-radius:28px;
+background:linear-gradient(180deg,#111,#000);
+border:10px solid #444;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:100px;
+position:relative;
+overflow:hidden;
+}
+
+.tv::before{
+content:'';
+position:absolute;
+inset:0;
+background:
+repeating-linear-gradient(
+0deg,
+rgba(255,255,255,.05),
+rgba(255,255,255,.05) 2px,
+transparent 2px,
+transparent 5px
+);
+}
+
+.controls{
+margin-top:24px;
+display:flex;
+gap:14px;
+flex-wrap:wrap;
+}
+
+input{
+flex:1;
+min-width:240px;
+padding:18px;
+border:none;
+outline:none;
+border-radius:18px;
+background:rgba(255,255,255,.12);
+border:1px solid rgba(255,255,255,.12);
+color:white;
+font-size:16px;
+}
+
+input::placeholder{
+color:rgba(255,255,255,.65);
+}
+
+.start,.mute-btn,.cert-btn{
+border:none;
+cursor:none;
+padding:18px 24px;
+border-radius:20px;
+font-size:15px;
+font-weight:900;
+background:
+linear-gradient(135deg,#ffd500,#ff8400);
+color:black;
+box-shadow:0 10px 24px rgba(255,180,0,.35);
+transition:.22s;
+}
+
+.start:hover,
+.mute-btn:hover,
+.cert-btn:hover{
+transform:translateY(-3px) scale(1.03);
+}
+
+.torta{
+position:fixed;
+font-size:180px;
+pointer-events:none;
+z-index:99999;
+animation:splat .85s forwards;
+}
+
+@keyframes splat{
+0%{
+transform:translate(-50%,-50%) scale(.15) rotate(-40deg);
+opacity:0;
+}
+45%{
+opacity:1;
+}
+100%{
+transform:translate(-50%,-50%) scale(1.18) rotate(12deg);
+opacity:0;
+}
+}
+
+.final-card{
+text-align:center;
+}
+
+.final-card h2{
+font-family:'Bungee',cursive;
+font-size:56px;
+line-height:1;
+margin-bottom:16px;
+text-shadow:5px 5px 0 #000;
+}
+
+.final-card p{
+font-size:17px;
+line-height:1.7;
+margin-bottom:14px;
+}
+
+.final-stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:14px;
+margin:24px 0;
+}
+
+.final-stat{
+padding:18px;
+border-radius:20px;
+background:rgba(255,255,255,.08);
+border:1px solid rgba(255,255,255,.12);
+font-weight:900;
+}
+
+.cert-preview{
+margin:20px auto;
+max-width:620px;
+padding:16px;
+border-radius:24px;
+background:rgba(255,255,255,.08);
+border:1px solid rgba(255,255,255,.12);
+}
+
+.cert-preview canvas{
+width:100%;
+border-radius:18px;
+box-shadow:0 18px 40px rgba(0,0,0,.35);
+}
+
+.final-actions{
+display:flex;
+gap:12px;
+justify-content:center;
+flex-wrap:wrap;
+margin-top:12px;
+}
+
+@media(max-width:1100px){
+
+.main{
+grid-template-columns:1fr;
+}
+
+.feed{
+max-height:none;
+}
+
+.hero{
+grid-template-columns:1fr;
+}
+
+.actions{
+grid-template-columns:1fr;
+}
+
+}
+
+@media(max-width:520px){
+
+.overlay{
+align-items:flex-start;
+padding:10px;
+overflow:hidden;
+}
+
+.modal{
+max-height:calc(100vh - 20px);
+border-radius:24px;
+padding:22px;
+}
+
+.hero{
+gap:18px;
+}
+
+.tv{
+min-height:150px;
+}
+
+.topbar{
+padding:12px;
+}
+
+.logo{
+font-size:24px;
+text-align:center;
+width:100%;
+}
+
+.scoreboard{
+width:100%;
+display:grid;
+grid-template-columns:1fr;
+}
+
+.score{
+text-align:center;
+}
+
+.ticket{
+padding:18px;
+}
+
+.hero h1{
+font-size:48px;
+}
+
+.controls{
+flex-direction:column;
+}
+
+.start,
+.mute-btn,
+.cert-btn,
+input{
+width:100%;
+}
+
+.final-stats{
+grid-template-columns:1fr;
+}
+
+.final-card h2{
+font-size:38px;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<svg id="cursorPie" viewBox="0 0 80 80" aria-hidden="true">
+<defs>
+<linearGradient id="cupWrap" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#ffe6a6"/>
+<stop offset="1" stop-color="#ff9f43"/>
+</linearGradient>
+<radialGradient id="frost" cx="42%" cy="30%" r="72%">
+<stop offset="0" stop-color="#ffffff"/>
+<stop offset="48%" stop-color="#ffd7ef"/>
+<stop offset="100%" stop-color="#ff4fa3"/>
+</radialGradient>
+</defs>
+<path d="M24 43 L56 43 L51 70 L29 70 Z" fill="url(#cupWrap)" stroke="#7a3b00" stroke-width="2"/>
+<path d="M30 45 L33 69 M40 45 L40 70 M50 45 L47 69" stroke="rgba(122,59,0,.45)" stroke-width="2"/>
+<path d="M18 42 C17 30,28 29,29 22 C31 12,47 12,50 23 C61 24,65 39,55 45 C45 51,25 51,18 42Z" fill="url(#frost)" stroke="#ffffff" stroke-width="2"/>
+<circle cx="40" cy="15" r="6" fill="#ff1744" stroke="#fff" stroke-width="2"/>
+<circle cx="31" cy="31" r="3" fill="#ffd500"/>
+<circle cx="46" cy="28" r="3" fill="#00d9ff"/>
+<circle cx="53" cy="38" r="2.8" fill="#7a2cff"/>
+</svg>
+
+<div id="intro" class="overlay">
+
+<div class="modal">
+
+<div class="hero">
+
+<div>
+
+<h1>PASSA<br>OU<br>PATCHA</h1>
+
+<p>
+O primeiro programa de auditório corporativo onde o participante precisa sobreviver ao caos operacional sem derrubar produção... nem a própria carreira.
+</p>
+
+<p style="margin-top:16px;">
+Não é quiz. Não é prova. É pressão, ticket acumulando, diretoria perguntando absurdo e torta na cara.
+</p>
+
+<div class="controls">
+
+<input id="playerName" placeholder="Digite seu nome operacional..." maxlength="24">
+
+<button class="start" onclick="startGame()">
+ENTRAR AO VIVO 📺
+</button>
+
+<button class="mute-btn" onclick="toggleMute()">
+🔊 SOM
+</button>
+
+</div>
+
+</div>
+
+<div class="tv">
+📡
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div id="finalOverlay" class="overlay" style="display:none">
+
+<div class="modal final-card">
+
+<h2 id="finalTitle"></h2>
+
+<p id="finalText"></p>
+
+<div class="final-stats">
+
+<div class="final-stat">
+🎂 Tortas<br>
+<span id="finalPies"></span>
+</div>
+
+<div class="final-stat">
+🔥 Caos<br>
+<span id="finalChaos"></span>
+</div>
+
+<div class="final-stat">
+🏆 Reputação<br>
+<span id="finalRep"></span>
+</div>
+
+</div>
+
+<div id="certArea" class="cert-preview" style="display:none">
+<canvas id="certCanvas" width="1400" height="900"></canvas>
+</div>
+
+<div class="final-actions">
+<button id="downloadBtn" class="cert-btn" style="display:none" onclick="downloadCertificate()">
+BAIXAR CERTIFICADO PNG
+</button>
+
+<button class="cert-btn" onclick="restartGame()">
+REFAZER DESAFIO 🔁
+</button>
+</div>
+
+</div>
+
+</div>
+
+<div id="app">
+
+<header class="topbar">
+
+<div class="logo">
+PASSA OU PATCHA <span>AO VIVO</span>
+</div>
+
+<div class="scoreboard">
+
+<div class="score">
+🎂 Tortas: <span id="pies">0</span>
+</div>
+
+<div class="score">
+🔥 Caos: <span id="chaos">0</span>%
+</div>
+
+<div class="score">
+🏆 Reputação: <span id="rep">100</span>
+</div>
+
+</div>
+
+</header>
+
+<main class="main">
+
+<aside class="panel">
+
+<div class="section-title">
+Apresentador
+</div>
+
+<div class="host">
+
+<div class="avatar"></div>
+
+<div class="host-name">
+TONHÃO<br>DO SOC
+</div>
+
+<div class="host-quote" id="hostQuote">
+“Hoje alguém vai atualizar firewall sexta-feira às 18:52... e o público vai decidir se merece torta.”
+</div>
+
+<div class="audience">
+
+<div class="plate"></div>
+<div class="plate"></div>
+<div class="plate"></div>
+<div class="plate"></div>
+<div class="plate"></div>
+<div class="plate"></div>
+<div class="plate"></div>
+<div class="plate"></div>
+<div class="plate"></div>
+<div class="plate"></div>
+
+</div>
+
+</div>
+
+</aside>
+
+<section class="panel">
+
+<div class="section-title">
+Incidente ao vivo
+</div>
+
+<div class="stage">
+
+<div class="ticket">
+
+<div id="sev" class="severity critical">
+🚨 CRÍTICO
+</div>
+
+<h2 id="title"></h2>
+
+<pre id="details"></pre>
+
+<div class="actions">
+
+<button class="action assume" onclick="decision('assume')">
+ASSUMIR INCIDENTE
+</button>
+
+<button class="action pass" onclick="decision('pass')">
+REPASSAR PRO N2
+</button>
+
+<button class="action logs" onclick="decision('logs')">
+PEDIR MAIS LOGS
+</button>
+
+<button class="action ignore" onclick="decision('ignore')">
+IGNORAR ALERTA
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<aside class="panel">
+
+<div class="section-title">
+Plateia corporativa
+</div>
+
+<div class="feed" id="feed"></div>
+
+</aside>
+
+</main>
+
+<footer class="footer">
+Mariana BS — Cybersecurity Engineer • PASSA OU PATCHA • O auditório onde até o SIEM pede demissão
+</footer>
+
+</div>
+
+<script>
+
+const incidents = [
+
+{
+sev:'critical',
+title:'Possível ransomware em ERP financeiro',
+details:`[ALERTA]
+vssadmin delete shadows /all /quiet
+
+Host: ERP-FIN-02
+User: svc-backup
+Origem: PowerShell encoded
+
+Contexto:
+Execução fora da janela de backup.`,
+best:'assume'
+},
+
+{
+sev:'high',
+title:'Explosão de logons falhos no controlador de domínio',
+details:`[AUTH SPIKE]
+DC01
+4625 events/min
+
+Origem:
+10.0.45.22
+
+Contexto:
+Mesmo IP tentando múltiplos usuários.`,
+best:'logs'
+},
+
+{
+sev:'medium',
+title:'Usuário abriu ticket dizendo que “a internet morreu”',
+details:`[HELPDESK]
+
+Host: NOTE-223
+
+Chrome com 97 abas abertas
+YouTube em 4K
+CPU: 99%
+
+Contexto:
+Usuário pediu prioridade máxima.`,
+best:'ignore'
+},
+
+{
+sev:'critical',
+title:'Upload suspeito para serviço externo',
+details:`[DLP ALERT]
+
+Destino: mega.nz
+Arquivo: financeiro.zip
+2.4GB
+
+Usuário:
+carlos.temp`,
+best:'assume'
+},
+
+{
+sev:'high',
+title:'Firewall reiniciado em horário comercial',
+details:`[INFRA ALERT]
+
+FW-CORE-01
+
+Reboot inesperado
+14:03
+
+Último admin:
+admin`,
+best:'pass'
+},
+
+{
+sev:'critical',
+title:'Mimikatz-like detectado em estação do RH',
+details:`[EDR]
+
+Processo suspeito acessando LSASS
+
+Host:
+RH-NOTE-017
+
+Usuário abriu DOCM suspeito.`,
+best:'assume'
+}
+
+];
+
+const comments = [
+'“O N2 já pediu música no Fantástico de tanto ticket repassado.”',
+'“A diretoria perguntou se ransomware impacta o Power BI.”',
+'“Tem alguém tentando subir patch em produção sem change.”',
+'“O jurídico perguntou se apagar log resolve LGPD.”',
+'“O público está gritando: ISOLAAAA.”',
+'“O fornecedor disse que no ambiente dele funciona.”'
+];
+
+let current = 0;
+let pies = 0;
+let chaos = 0;
+let rep = 100;
+let player = '';
+let correct = 0;
+let muted = false;
+let feedTimer = null;
+let audioCtx = null;
+let musicTimer = null;
+let beatStep = 0;
+
+function ensureAudio(){
+if(!audioCtx){
+audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+if(audioCtx.state === 'suspended'){
+audioCtx.resume();
+}
+}
+
+function playTone(freq, start, duration, type='sine', gainValue=.035){
+if(muted) return;
+ensureAudio();
+const o = audioCtx.createOscillator();
+const g = audioCtx.createGain();
+o.type = type;
+o.frequency.setValueAtTime(freq, start);
+g.gain.setValueAtTime(0.0001, start);
+g.gain.exponentialRampToValueAtTime(gainValue, start + 0.015);
+g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+o.connect(g);
+g.connect(audioCtx.destination);
+o.start(start);
+o.stop(start + duration + 0.03);
+}
+
+function startPopMusic(){
+if(muted) return;
+ensureAudio();
+if(musicTimer) return;
+const bpm = 112;
+const stepMs = (60000 / bpm) / 2;
+const bass = [146.83,146.83,174.61,146.83,220,196,174.61,146.83];
+const lead = [587.33,0,659.25,0,739.99,659.25,587.33,493.88,523.25,0,587.33,659.25,0,523.25,493.88,0];
+function tick(){
+  const now = audioCtx.currentTime;
+  const b = bass[beatStep % bass.length];
+  playTone(b, now, .16, 'sawtooth', .022);
+  if(beatStep % 2 === 0){
+    const l = lead[beatStep % lead.length];
+    if(l) playTone(l, now + .02, .18, 'square', .014);
+  }
+  if(beatStep % 4 === 2){
+    playTone(1046.5, now, .055, 'triangle', .01);
+  }
+  beatStep++;
+}
+tick();
+musicTimer = setInterval(tick, stepMs);
+}
+
+function stopPopMusic(){
+if(musicTimer){
+  clearInterval(musicTimer);
+  musicTimer = null;
+}
+}
+
+function playPop(){
+startPopMusic();
+}
+
+function splashSound(){
+if(muted) return;
+ensureAudio();
+const o = audioCtx.createOscillator();
+const g = audioCtx.createGain();
+o.type='triangle';
+o.frequency.value=180;
+g.gain.value=.12;
+o.connect(g);
+g.connect(audioCtx.destination);
+o.frequency.exponentialRampToValueAtTime(40,audioCtx.currentTime + .35);
+g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime + .35);
+o.start();
+o.stop(audioCtx.currentTime + .35);
+}
+
+function toggleMute(){
+muted=!muted;
+document.querySelector('.mute-btn').innerText = muted ? '🔇 MUTED' : '🔊 SOM';
+}
+
+document.addEventListener('mousemove',e=>{
+const c = document.getElementById('cursorPie');
+c.style.left = e.clientX + 'px';
+c.style.top = e.clientY + 'px';
+});
+
+function startGame(){
+ensureAudio();
+playPop();
+
+const input = document.getElementById('playerName');
+
+if(!input.value.trim()){
+input.classList.add('flash');
+setTimeout(()=>{
+input.classList.remove('flash');
+},400);
+return;
+}
+
+player = input.value.trim();
+document.getElementById('intro').style.display='none';
+pushFeed(`📺 ${player} entrou AO VIVO no PASSA OU PATCHA.`);
+pushFeed('🎤 Tonhão do SOC: “Boa sorte... você vai precisar.”');
+loadIncident();
+if(feedTimer) clearInterval(feedTimer);
+feedTimer = setInterval(randomFeed,4500);
+}
+
+function loadIncident(){
+if(current >= incidents.length){
+finishGame();
+return;
+}
+
+const i = incidents[current];
+const sev = document.getElementById('sev');
+sev.className='severity '+i.sev;
+
+if(i.sev==='critical'){
+sev.innerHTML='🚨 CRÍTICO';
+}else if(i.sev==='high'){
+sev.innerHTML='⚠️ ALTO';
+}else{
+sev.innerHTML='📡 MÉDIO';
+}
+
+document.getElementById('title').innerText=i.title;
+document.getElementById('details').innerText=i.details;
+}
+
+function decision(choice){
+playPop();
+const i = incidents[current];
+
+if(choice===i.best){
+correct++;
+rep=Math.min(100,rep+4);
+chaos=Math.max(0,chaos-3);
+pushFeed('🏆 Decisão operacional defensável.');
+}else{
+pies++;
+chaos=Math.min(100,chaos+12);
+rep=Math.max(0,rep-10);
+showPie();
+splashSound();
+pushFeed('🎂 TORTA OPERACIONAL NA CARA.');
+pushFeed('💥 O ambiente entrou em sofrimento emocional.');
+}
+
+updateStats();
+current++;
+loadIncident();
+}
+
+function updateStats(){
+document.getElementById('pies').innerText=pies;
+document.getElementById('chaos').innerText=chaos;
+document.getElementById('rep').innerText=rep;
+}
+
+function finishGame(){
+if(feedTimer) clearInterval(feedTimer);
+const total = incidents.length;
+const percent = Math.round((correct / total) * 100);
+
+document.getElementById('finalOverlay').style.display='flex';
+document.getElementById('finalPies').innerText=pies;
+document.getElementById('finalChaos').innerText=chaos+'%';
+document.getElementById('finalRep').innerText=rep;
+
+if(percent >= 70){
+document.getElementById('finalTitle').innerText = 'CERTIFICADO LIBERADO';
+document.getElementById('finalText').innerText = `${player}, você sobreviveu ao auditório do SOC e manteve o caos sob controle operacional. Aproveitamento: ${percent}%.`;
+document.getElementById('certArea').style.display='block';
+document.getElementById('downloadBtn').style.display='inline-block';
+drawCertificate(percent);
+}else{
+document.getElementById('finalTitle').innerText = 'SEM CERTIFICADO';
+document.getElementById('finalText').innerText = `${player}, você acertou apenas ${percent}% das decisões. O auditório decidiu que ainda não é seguro deixar você sozinho perto do firewall.`;
+document.getElementById('certArea').style.display='none';
+document.getElementById('downloadBtn').style.display='none';
+}
+}
+
+function pushFeed(text){
+const feed = document.getElementById('feed');
+const card = document.createElement('div');
+card.className='feed-card';
+card.innerText=text;
+feed.prepend(card);
+while(feed.children.length > 14){
+feed.removeChild(feed.lastChild);
+}
+}
+
+function randomFeed(){
+const text = comments[Math.floor(Math.random() * comments.length)];
+pushFeed(text);
+document.getElementById('hostQuote').innerText=text;
+}
+
+function showPie(){
+const pie=document.createElement('div');
+pie.className='torta';
+pie.innerText='🎂';
+pie.style.left=(28 + Math.random()*44)+'%';
+pie.style.top=(28 + Math.random()*44)+'%';
+document.body.appendChild(pie);
+setTimeout(()=>{
+pie.remove();
+},850);
+}
+
+function drawCertificate(percent){
+const canvas=document.getElementById('certCanvas');
+const ctx=canvas.getContext('2d');
+const w=canvas.width;
+const h=canvas.height;
+const grad=ctx.createLinearGradient(0,0,w,h);
+grad.addColorStop(0,'#18072f');
+grad.addColorStop(.4,'#5b1592');
+grad.addColorStop(.75,'#ff3d6e');
+grad.addColorStop(1,'#ffd500');
+ctx.fillStyle=grad;
+ctx.fillRect(0,0,w,h);
+ctx.fillStyle='rgba(255,255,255,.06)';
+for(let i=0;i<22;i++){
+ctx.beginPath();
+ctx.arc(Math.random()*w,Math.random()*h,40+Math.random()*90,0,Math.PI*2);
+ctx.fill();
+}
+ctx.fillStyle='rgba(0,0,0,.35)';
+roundRect(ctx,70,70,w-140,h-140,42,true,false);
+ctx.strokeStyle='#ffd500';
+ctx.lineWidth=8;
+roundRect(ctx,92,92,w-184,h-184,34,false,true);
+ctx.strokeStyle='rgba(255,255,255,.7)';
+ctx.lineWidth=3;
+roundRect(ctx,118,118,w-236,h-236,26,false,true);
+ctx.textAlign='center';
+ctx.fillStyle='#fff';
+ctx.font='900 44px Rubik';
+ctx.fillText('CERTIFICADO DE SOBREVIVÊNCIA OPERACIONAL',w/2,180);
+ctx.font='900 82px Rubik';
+ctx.fillStyle='#ffd500';
+ctx.fillText('PASSA OU PATCHA',w/2,282);
+ctx.fillStyle='#fff';
+ctx.font='700 30px Rubik';
+ctx.fillText('Concedido a',w/2,360);
+ctx.font='900 58px Rubik';
+fitText(ctx, player, w/2, 435, 980, 58);
+ctx.font='500 27px Rubik';
+wrapText(ctx,'Por sobreviver ao caos operacional, tomar decisões sob pressão e resistir à vontade corporativa de repassar tudo sem analisar evidências.',w/2,510,900,38);
+ctx.fillStyle='#ffd500';
+ctx.font='900 32px Rubik';
+ctx.fillText(`Aproveitamento: ${percent}%`,w/2,645);
+ctx.fillStyle='#fff';
+ctx.font='700 25px Rubik';
+ctx.fillText('Carga horária: 1h',w/2,700);
+ctx.fillText(`Tortas: ${pies} • Reputação: ${rep}`,w/2,742);
+const date = new Date().toLocaleDateString('pt-BR');
+ctx.fillText(`Conclusão: ${date}`,w/2,784);
+ctx.font='italic 35px serif';
+ctx.fillText('Mariana BS',w/2,842);
+ctx.font='700 22px Rubik';
+ctx.fillText('Cybersecurity Engineer',w/2,875);
+}
+
+function downloadCertificate(){
+const canvas=document.getElementById('certCanvas');
+const link=document.createElement('a');
+link.download='certificado-passa-ou-patcha.png';
+link.href=canvas.toDataURL('image/png');
+link.click();
+}
+
+function restartGame(){
+if(feedTimer){
+clearInterval(feedTimer);
+feedTimer = null;
+}
+current = 0;
+pies = 0;
+chaos = 0;
+rep = 100;
+correct = 0;
+player = '';
+
+document.getElementById('pies').innerText = '0';
+document.getElementById('chaos').innerText = '0';
+document.getElementById('rep').innerText = '100';
+document.getElementById('feed').innerHTML = '';
+document.getElementById('playerName').value = '';
+document.getElementById('certArea').style.display = 'none';
+document.getElementById('downloadBtn').style.display = 'none';
+document.getElementById('finalOverlay').style.display = 'none';
+document.getElementById('intro').style.display = 'flex';
+document.getElementById('hostQuote').innerText = '“Hoje alguém vai atualizar firewall sexta-feira às 18:52... e o público vai decidir se merece torta.”';
+loadIncident();
+window.scrollTo({top:0,left:0,behavior:'smooth'});
+}
+
+function roundRect(ctx,x,y,w,h,r,fill,stroke){
+ctx.beginPath();
+ctx.moveTo(x+r,y);
+ctx.lineTo(x+w-r,y);
+ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+ctx.lineTo(x+w,y+h-r);
+ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+ctx.lineTo(x+r,y+h);
+ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+ctx.lineTo(x,y+r);
+ctx.quadraticCurveTo(x,y,x+r,y);
+ctx.closePath();
+if(fill) ctx.fill();
+if(stroke) ctx.stroke();
+}
+
+function wrapText(ctx,text,x,y,maxWidth,lineHeight){
+const words=text.split(' ');
+let line='';
+for(let n=0;n<words.length;n++){
+const testLine=line+words[n]+' ';
+const metrics=ctx.measureText(testLine);
+if(metrics.width > maxWidth && n > 0){
+ctx.fillText(line,x,y);
+line=words[n]+' ';
+y += lineHeight;
+}else{
+line=testLine;
+}
+}
+ctx.fillText(line,x,y);
+}
+
+function fitText(ctx, text, x, y, maxWidth, initialSize){
+let size = initialSize;
+while(size > 28){
+ctx.font = `900 ${size}px Rubik`;
+if(ctx.measureText(text).width <= maxWidth) break;
+size -= 2;
+}
+ctx.fillText(text, x, y);
+}
+
+loadIncident();
+
+</script>
+
+</body>
+</html>
